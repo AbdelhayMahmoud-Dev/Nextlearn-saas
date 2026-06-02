@@ -48,6 +48,7 @@ export const PaymentService = {
     userId: string,
     courseId: string,
     couponCode?: string,
+    referralCode?: string,
   ): Promise<{ checkoutUrl: string }> {
     assertStripe();
 
@@ -83,6 +84,7 @@ export const PaymentService = {
 
     const metadata: Record<string, string> = { tenantId, userId, courseId };
     if (couponId) metadata.couponId = couponId;
+    if (referralCode) metadata.referralCode = referralCode;
 
     // Stripe Connect: route the tenant's share to their account, keep the fee.
     const { connectAccount, commissionRate } = await getConnectContext(tenantId);

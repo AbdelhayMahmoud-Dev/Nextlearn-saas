@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Palette,
   Settings,
+  Share2,
   Shield,
   Users,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ const ITEMS = [
   { label: 'Coupons', href: '/admin/coupons', icon: BadgePercent },
   { label: 'Branding', href: '/admin/branding', icon: Palette },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { label: 'Affiliates', href: '/admin/affiliates', icon: Share2 },
   { label: 'Security', href: '/admin/security', icon: Shield },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
   { label: 'Payouts', href: '/admin/settings/stripe', icon: Banknote },

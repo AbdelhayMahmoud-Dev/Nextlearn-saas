@@ -6,6 +6,7 @@ import { Lesson } from '../models/Lesson.model';
 import { Subscription } from '../models/Subscription.model';
 import { ApiError } from '../utils/ApiError';
 import { NotificationService } from './notification.service';
+import { AffiliateService } from './affiliate.service';
 
 /** Result of an access check — the boolean plus a human-readable reason. */
 export interface AccessResult {
@@ -30,7 +31,12 @@ export const EnrollmentService = {
    * Enrolls a user in a course. Idempotent (returns the existing enrollment if
    * present). Paid courses require Stripe checkout (deferred) → 402.
    */
-  async enroll(tenantId: string, userId: string, courseId: string): Promise<IEnrollment> {
+  async enroll(
+    tenantId: string,
+    userId: string,
+    courseId: string,
+    referralCode?: string,
+  ): Promise<IEnrollment> {
     const course = await Course.findOne({ _id: courseId, tenantId, isPublished: true })
       .select('price title slug')
       .lean<{ _id: Types.ObjectId; price: number; title: string; slug: string } | null>();
@@ -61,6 +67,7 @@ export const EnrollmentService = {
         body: 'Start learning anytime from My Courses.',
         link: `/courses/${course.slug}`,
       }),
+      AffiliateService.recordConversion({ tenantId, code: referralCode, referredUserId: userId, courseId }),
     ]);
 
     return enrollment.toObject();
@@ -97,7 +104,12 @@ export const EnrollmentService = {
   /**
    * Enrolls in a FREE course (skips payment). Throws 400 for paid courses.
    */
-  async enrollFree(tenantId: string, userId: string, courseId: string): Promise<IEnrollment> {
+  async enrollFree(
+    tenantId: string,
+    userId: string,
+    courseId: string,
+    referralCode?: string,
+  ): Promise<IEnrollment> {
     const course = await Course.findOne({ _id: courseId, tenantId, isPublished: true })
       .select('price')
       .lean();
@@ -105,7 +117,7 @@ export const EnrollmentService = {
     if (course.price > 0) {
       throw ApiError.badRequest('This course is paid — please complete checkout to enroll');
     }
-    return this.createEnrollment(tenantId, userId, courseId);
+    return this.createEnrollment(tenantId, userId, courseId, undefined, referralCode);
   },
 
   /**
@@ -118,6 +130,7 @@ export const EnrollmentService = {
     userId: string,
     courseId: string,
     paymentId?: string,
+    referralCode?: string,
   ): Promise<IEnrollment> {
     const course = await Course.findOne({ _id: courseId, tenantId })
       .select('title slug')
@@ -155,6 +168,13 @@ export const EnrollmentService = {
         title: 'Enrollment confirmed',
         body: `You are now enrolled in “${course.title}”.`,
         link: `/courses/${course.slug}`,
+      }),
+      AffiliateService.recordConversion({
+        tenantId,
+        code: referralCode,
+        referredUserId: userId,
+        courseId,
+        paymentId,
       }),
     ]);
 

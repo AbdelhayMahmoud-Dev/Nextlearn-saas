@@ -4,6 +4,7 @@ export const checkoutSchema = z.object({
   body: z.object({
     courseId: z.string().trim().min(1),
     couponCode: z.string().trim().min(1).optional(),
+    referralCode: z.string().trim().min(1).max(32).optional(),
   }),
 });
 

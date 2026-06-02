@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { clearReferralCode, getReferralCode } from '@/lib/referral';
 import type { ApiErrorShape, ApiResponse, IEnrollment } from '@/types';
 
 const MY_ENROLLMENTS_KEY = ['enrollments', 'my'] as const;
@@ -30,10 +31,14 @@ export function useEnroll() {
   const queryClient = useQueryClient();
   return useMutation<IEnrollment, ApiErrorShape, string>({
     mutationFn: async (courseId: string): Promise<IEnrollment> => {
-      const { data } = await apiClient.post<ApiResponse<IEnrollment>>('/enrollments', { courseId });
+      const { data } = await apiClient.post<ApiResponse<IEnrollment>>('/enrollments', {
+        courseId,
+        referralCode: getReferralCode(),
+      });
       return data.data;
     },
     onSuccess: () => {
+      clearReferralCode();
       void queryClient.invalidateQueries({ queryKey: MY_ENROLLMENTS_KEY });
     },
   });

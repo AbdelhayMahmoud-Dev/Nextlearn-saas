@@ -14,6 +14,7 @@ import { CouponService } from '../services/coupon.service';
 import { AuditService } from '../services/audit.service';
 import { SecurityService } from '../services/security.service';
 import { AdminAdvancedAnalyticsService } from '../services/admin.advancedAnalytics.service';
+import { AffiliateService } from '../services/affiliate.service';
 
 export const AdminController = {
   // ── Analytics ───────────────────────────────────────────────────────────
@@ -244,6 +245,65 @@ export const AdminController = {
   analyticsInstructorPerformance: asyncHandler(async (req, res) => {
     const data = await AdminAdvancedAnalyticsService.instructorPerformance(getTenantId(req));
     ApiResponse.success(res, data, 'Instructor performance');
+  }),
+
+  // ── Affiliates ────────────────────────────────────────────────────────────
+  affiliateOverview: asyncHandler(async (req, res) => {
+    ApiResponse.success(res, await AffiliateService.adminOverview(getTenantId(req)), 'Affiliate overview');
+  }),
+  listAffiliates: asyncHandler(async (req, res) => {
+    const { items, meta } = await AffiliateService.adminListAffiliates(getTenantId(req), req.query);
+    ApiResponse.success(res, items, 'Affiliates', 200, meta);
+  }),
+  setAffiliateStatus: asyncHandler(async (req, res) => {
+    const me = getAuthUser(req);
+    const ctx = getRequestContext(req);
+    const result = await AffiliateService.adminSetStatus(me.tenantId, req.params.id, req.body.status);
+    await AuditService.record({
+      tenantId: me.tenantId,
+      actorId: me.id,
+      actorRole: me.role,
+      action: 'affiliate.status_changed',
+      targetType: 'affiliate',
+      targetId: req.params.id,
+      metadata: { status: req.body.status },
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+    });
+    ApiResponse.success(res, result, 'Affiliate status updated');
+  }),
+  setAffiliateRate: asyncHandler(async (req, res) => {
+    const me = getAuthUser(req);
+    const result = await AffiliateService.adminSetRate(me.tenantId, req.params.id, req.body.rate);
+    ApiResponse.success(res, result, 'Commission rate updated');
+  }),
+  listAffiliatePayouts: asyncHandler(async (req, res) => {
+    const { items, meta } = await AffiliateService.adminListPayouts(getTenantId(req), {
+      page: req.query.page,
+      limit: req.query.limit,
+      status: typeof req.query.status === 'string' ? req.query.status : undefined,
+    });
+    ApiResponse.success(res, items, 'Affiliate payouts', 200, meta);
+  }),
+  markAffiliatePayoutPaid: asyncHandler(async (req, res) => {
+    const me = getAuthUser(req);
+    const ctx = getRequestContext(req);
+    const result = await AffiliateService.adminMarkPayoutPaid(
+      me.tenantId,
+      req.params.id,
+      typeof req.body.reference === 'string' ? req.body.reference : undefined,
+    );
+    await AuditService.record({
+      tenantId: me.tenantId,
+      actorId: me.id,
+      actorRole: me.role,
+      action: 'affiliate.payout_paid',
+      targetType: 'affiliate_payout',
+      targetId: req.params.id,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+    });
+    ApiResponse.success(res, result, 'Payout marked paid');
   }),
 
   // ── Security + Audit ──────────────────────────────────────────────────────

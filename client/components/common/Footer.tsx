@@ -6,8 +6,9 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
     heading: 'Platform',
     links: [
       { label: 'Courses', href: '/courses' },
+      { label: 'Marketplace', href: '/marketplace' },
+      { label: 'Affiliate Program', href: '/affiliate' },
       { label: 'Pricing', href: '/#pricing' },
-      { label: 'Blog', href: '/blog' },
     ],
   },
   {

@@ -8,12 +8,13 @@ import type { CheckoutBody, SubscribeBody } from '../validations/payment.validat
 export const PaymentController = {
   checkout: asyncHandler(async (req, res) => {
     const user = getAuthUser(req);
-    const { courseId, couponCode } = req.body as CheckoutBody;
+    const { courseId, couponCode, referralCode } = req.body as CheckoutBody;
     const result = await PaymentService.createCheckoutSession(
       user.tenantId,
       user.id,
       courseId,
       couponCode,
+      referralCode,
     );
     ApiResponse.success(res, result, 'Checkout session created');
   }),

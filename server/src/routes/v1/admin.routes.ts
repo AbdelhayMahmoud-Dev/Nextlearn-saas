@@ -11,6 +11,11 @@ import {
   updateBrandingSchema,
   updateGeneralSchema,
 } from '../../validations/admin.validation';
+import {
+  setRateSchema,
+  setStatusSchema,
+  markPaidSchema,
+} from '../../validations/affiliate.validation';
 
 const router = Router();
 
@@ -62,6 +67,14 @@ router.get('/settings', AdminController.getSettings);
 router.get('/settings/branding', AdminController.getBranding);
 router.put('/settings/branding', validate(updateBrandingSchema), AdminController.updateBranding);
 router.put('/settings/general', validate(updateGeneralSchema), AdminController.updateGeneral);
+
+// ── Affiliates ───────────────────────────────────────────────────────────────
+router.get('/affiliates/overview', AdminController.affiliateOverview);
+router.get('/affiliates', AdminController.listAffiliates);
+router.patch('/affiliates/:id/status', validate(setStatusSchema), AdminController.setAffiliateStatus);
+router.patch('/affiliates/:id/rate', validate(setRateSchema), AdminController.setAffiliateRate);
+router.get('/affiliates/payouts/all', AdminController.listAffiliatePayouts);
+router.post('/affiliates/payouts/:id/paid', validate(markPaidSchema), AdminController.markAffiliatePayoutPaid);
 
 // ── Security + Audit ─────────────────────────────────────────────────────────
 router.get('/security/audit-logs', AdminController.auditLogs);

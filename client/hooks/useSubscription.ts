@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { clearReferralCode, getReferralCode } from '@/lib/referral';
 import type {
   ApiErrorShape,
   ApiResponse,
@@ -26,7 +27,7 @@ export function useCreateCheckout() {
     mutationFn: async ({ courseId, couponCode }): Promise<string> => {
       const { data } = await apiClient.post<ApiResponse<{ checkoutUrl: string }>>(
         '/payments/checkout',
-        { courseId, couponCode },
+        { courseId, couponCode, referralCode: getReferralCode() },
       );
       return data.data.checkoutUrl;
     },
@@ -85,10 +86,12 @@ export function useEnrollFree() {
     mutationFn: async (courseId): Promise<IEnrollment> => {
       const { data } = await apiClient.post<ApiResponse<IEnrollment>>('/enrollments/free', {
         courseId,
+        referralCode: getReferralCode(),
       });
       return data.data;
     },
     onSuccess: () => {
+      clearReferralCode();
       void queryClient.invalidateQueries({ queryKey: ['enrollments', 'my'] });
     },
   });

@@ -1,12 +1,17 @@
+import { Suspense } from 'react';
 import { Navbar } from '@/components/common/Navbar';
 import { Footer } from '@/components/common/Footer';
 import { PageTransition } from '@/components/common/PageTransition';
 import { MaintenanceBanner } from '@/components/common/MaintenanceBanner';
+import { ReferralCapture } from '@/components/common/ReferralCapture';
 
 /** Public/student-facing layout: navbar + content + footer. */
 export default function MainLayout({ children }: { children: React.ReactNode }): JSX.Element {
   return (
     <div className="flex min-h-screen flex-col">
+      <Suspense fallback={null}>
+        <ReferralCapture />
+      </Suspense>
       <Navbar />
       <main className="flex-1">
         <MaintenanceBanner>

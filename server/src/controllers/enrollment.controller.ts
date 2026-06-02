@@ -8,8 +8,8 @@ import { EnrollInput } from '../validations/enrollment.validation';
 export const EnrollmentController = {
   enroll: asyncHandler(async (req, res) => {
     const user = getAuthUser(req);
-    const { courseId } = req.body as EnrollInput;
-    const enrollment = await EnrollmentService.enroll(user.tenantId, user.id, courseId);
+    const { courseId, referralCode } = req.body as EnrollInput;
+    const enrollment = await EnrollmentService.enroll(user.tenantId, user.id, courseId, referralCode);
     ApiResponse.created(res, enrollment, 'Enrolled successfully');
   }),
 
@@ -28,8 +28,13 @@ export const EnrollmentController = {
   /** Enroll in a FREE course (no payment). Rejects paid courses with 400. */
   enrollFree: asyncHandler(async (req, res) => {
     const user = getAuthUser(req);
-    const { courseId } = req.body as EnrollInput;
-    const enrollment = await EnrollmentService.enrollFree(user.tenantId, user.id, courseId);
+    const { courseId, referralCode } = req.body as EnrollInput;
+    const enrollment = await EnrollmentService.enrollFree(
+      user.tenantId,
+      user.id,
+      courseId,
+      referralCode,
+    );
     ApiResponse.created(res, enrollment, 'Enrolled successfully');
   }),
 

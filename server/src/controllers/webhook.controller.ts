@@ -46,7 +46,7 @@ export const WebhookController = {
     switch (event.type) {
       case 'checkout.session.completed': {
         if (obj.object !== 'checkout.session') break;
-        const { tenantId, userId, courseId, couponId } = obj.metadata ?? {};
+        const { tenantId, userId, courseId, couponId, referralCode } = obj.metadata ?? {};
 
         if (obj.mode === 'payment' && tenantId && userId && courseId) {
           const completed = await PaymentService.markSessionCompleted(obj.id, {
@@ -54,7 +54,13 @@ export const WebhookController = {
           });
           // Side-effects run only on the first completion (idempotency).
           if (completed) {
-            await EnrollmentService.createEnrollment(tenantId, userId, courseId, completed.paymentId);
+            await EnrollmentService.createEnrollment(
+              tenantId,
+              userId,
+              courseId,
+              completed.paymentId,
+              referralCode,
+            );
             if (couponId) await CouponService.applyCoupon(couponId);
           }
         } else if (obj.mode === 'subscription') {

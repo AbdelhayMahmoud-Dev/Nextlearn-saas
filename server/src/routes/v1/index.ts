@@ -23,6 +23,7 @@ import tenantRoutes from './tenant.routes';
 import superadminRoutes from './superadmin.routes';
 import aiRoutes from './ai.routes';
 import marketplaceRoutes from './marketplace.routes';
+import affiliateRoutes from './affiliate.routes';
 
 const router = Router();
 
@@ -68,5 +69,7 @@ router.use('/superadmin', superadminRoutes);
 router.use('/ai', aiRoutes);
 // Public marketplace (featured/trending/top-rated courses, instructor directory)
 router.use('/marketplace', marketplaceRoutes);
+// Affiliate program (tracking, dashboard, commissions, payouts)
+router.use('/affiliate', affiliateRoutes);
 
 export default router;
