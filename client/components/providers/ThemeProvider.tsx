@@ -1,0 +1,22 @@
+'use client';
+
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import type { ComponentProps } from 'react';
+
+/** Wraps next-themes; class-based dark mode on <html>. */
+export function ThemeProvider({
+  children,
+  ...props
+}: ComponentProps<typeof NextThemesProvider>): JSX.Element {
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      {...props}
+    >
+      {children}
+    </NextThemesProvider>
+  );
+}

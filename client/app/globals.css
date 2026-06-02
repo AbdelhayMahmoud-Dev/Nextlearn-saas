@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 243 75% 59%;
+    --radius: 0.75rem;
+
+    /* White-label brand colors — overridable per tenant at runtime via JS. */
+    --brand-primary: #6366f1;
+    --brand-accent: #8b5cf6;
+    --brand-primary-foreground: #ffffff;
+  }
+
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 0 0% 98%;
+    --card: 222 47% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 243 75% 66%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
+    --ring: 243 75% 66%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+/* Reusable skeleton shimmer */
+@layer components {
+  .skeleton {
+    @apply relative overflow-hidden bg-muted;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    content: '';
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--foreground) / 0.06),
+      transparent
+    );
+  }
+
+  /* Pulsing glow for the highlighted pricing card */
+  .popular-glow {
+    animation: popular-pulse 2.8s ease-in-out infinite;
+  }
+
+  /* Animated marketing hero gradient */
+  .hero-gradient {
+    background: linear-gradient(120deg, hsl(var(--primary)), #8b5cf6, #ec4899, hsl(var(--primary)));
+    background-size: 300% 300%;
+    animation: hero-pan 14s ease infinite;
+  }
+}
+
+@keyframes popular-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.6), 0 0 18px hsl(var(--primary) / 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.9), 0 0 32px hsl(var(--primary) / 0.45);
+  }
+}
+
+@keyframes hero-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
