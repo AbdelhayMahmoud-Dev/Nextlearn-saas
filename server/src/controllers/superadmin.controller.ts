@@ -1,9 +1,15 @@
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiResponse } from '../utils/ApiResponse';
 import { TenantService } from '../services/tenant.service';
+import { OpsService } from '../services/ops.service';
 import type { CreateTenantBodyInput } from '../validations/tenant.validation';
 
 export const SuperAdminController = {
+  /** Operational health across infra, integrations, and scheduled jobs. */
+  opsStatus: asyncHandler(async (_req, res) => {
+    ApiResponse.success(res, await OpsService.getStatus(), 'Operational status');
+  }),
+
   listTenants: asyncHandler(async (req, res) => {
     const { items, meta } = await TenantService.listTenants(req.query);
     ApiResponse.success(res, items, 'Tenants', 200, meta);

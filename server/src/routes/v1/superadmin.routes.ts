@@ -15,6 +15,7 @@ const router = Router();
 // Cross-tenant routes — SUPERADMIN ONLY (never plain admin).
 router.use(authenticate, requireRole('superadmin'));
 
+router.get('/ops', SuperAdminController.opsStatus);
 router.get('/analytics', SuperAdminController.globalAnalytics);
 router.get('/tenants', SuperAdminController.listTenants);
 router.post('/tenants', validate(createTenantSchema), SuperAdminController.createTenant);

@@ -1,4 +1,4 @@
-import { BarChart3, Building2, PlusCircle, Settings } from 'lucide-react';
+import { Activity, BarChart3, Building2, PlusCircle, Settings } from 'lucide-react';
 import { RoleAreaShell } from '@/components/common/RoleAreaShell';
 import { SuperAdminGuard } from '@/components/superadmin/SuperAdminGuard';
 
@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const ITEMS = [
   { label: 'Tenants', href: '/superadmin/tenants', icon: Building2 },
   { label: 'Global Analytics', href: '/superadmin/analytics', icon: BarChart3 },
+  { label: 'Operations', href: '/superadmin/ops', icon: Activity },
   { label: 'Create Tenant', href: '/superadmin/tenants/create', icon: PlusCircle },
   { label: 'Settings', href: '/superadmin/settings', icon: Settings },
 ];
