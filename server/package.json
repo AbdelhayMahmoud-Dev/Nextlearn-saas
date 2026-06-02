@@ -16,6 +16,7 @@
     "seed:courses": "tsx src/scripts/seedCourses.ts",
     "seed:extras": "tsx src/scripts/seedExtras.ts",
     "verify:models": "tsx src/scripts/verifyModels.ts",
+    "docs:api": "tsx src/scripts/generateDocs.ts",
     "clean": "rimraf dist"
   },
   "dependencies": {
