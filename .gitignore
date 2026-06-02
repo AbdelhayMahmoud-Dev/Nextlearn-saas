@@ -3,12 +3,22 @@ node_modules/
 .pnp
 .pnp.js
 
-# Environment
+# Environment — ignore all .env variants, keep only the example templates
 .env
-.env.local
+.env.*
 .env.*.local
 *.env
 !.env.example
+!.env.*.example
+
+# Secrets / keys / certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+*.secret
 
 # Build output
 dist/
@@ -34,6 +44,9 @@ coverage/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Uploads / runtime artifacts
+uploads/
 
 # Misc
 *.tsbuildinfo
