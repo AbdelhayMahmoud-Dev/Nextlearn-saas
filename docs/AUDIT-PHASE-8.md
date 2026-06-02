@@ -1,123 +1,211 @@
-# NextLearn — Phase 8 Report (Enterprise Security increment)
+# NextLearn — Phase 8 Completion Report
 
 Date: 2026-06-02
-Scope: Phase 8.1 codebase audit + a fully built, verified **Enterprise Security** system (§8.7).
+Scope: **Enterprise Scale & Commercialization** — all Phase 8 sections (8.1–8.13).
 
-> **Why a scoped increment, not the whole phase.** Phase 8 as written spans ten
-> large product surfaces (AI assistant, advanced analytics, marketplace, affiliate
-> system, advanced white-label, ops dashboard, docs generator, perf, testing) plus
-> an audit and a verification gate. Delivering all of them in one pass at this
-> project's quality bar (strict TS, no placeholders, no `any`, every layer wired and
-> building) is not achievable without shipping stubs — which the execution rule
-> explicitly forbids ("Leave placeholder implementations"). The two rules collide,
-> so the work was scoped to one complete, production-grade vertical. **Enterprise
-> Security (§8.7)** was selected. The remaining areas have an honest roadmap in §7.
+Phase 8 was executed as verified increments: every section was built across
+backend + database + frontend, type-checked, built, and (where applicable)
+tested before moving on, then committed. Each section is its own git commit.
 
 ---
 
-## 1. Phase 8.1 — Codebase Audit (baseline)
-
-Read prior audits (Phase 1–7, UI phase) and re-verified the baseline before building:
+## 1. Final Verification Gate (8.12)
 
 | Check | Result |
-|---|---|
-| Server `tsc --noEmit` | 0 errors |
-| Client `tsc --noEmit` | 0 errors |
-| Server `npm run build` (`rimraf dist && tsc`) | clean |
-| Client `next build` | clean (Next 14 App Router) |
-| `madge --circular` (server `src`) | none |
-| `madge --circular` (client `app components hooks lib`) | none |
-| Forbidden patterns (`any`, `@ts-ignore`, `as unknown`, `console.*`) in feature code | none |
+| --- | --- |
+| Server `tsc --noEmit` | **0 errors** |
+| Client `tsc --noEmit` | **0 errors** |
+| Server `npm run build` (`rimraf dist && tsc`) | **clean** |
+| Client `next build` | **clean** |
+| Server tests (`vitest run`) | **35 passed / 35** (8 files) |
+| `madge --circular` (server `src`) | **none** |
+| `madge --circular` (client `app/components/hooks/lib/providers`) | **none** |
+| Forbidden patterns (`any`/`@ts-ignore`/`as unknown`/`console.*`) in Phase 8 code | **none** |
+| API docs generator (`npm run docs:api`) | **runs — 197 endpoints, 25 groups** |
 
-No regressions found; the pre-Phase-8 tree was green.
-
----
-
-## 2. Enterprise Security — What Was Built (§8.7)
-
-### 2.1 Data models (server)
-| Model | Purpose |
-|---|---|
-| `Session.model.ts` | One document per issued refresh token (device session). `refreshTokenHash` mirrors `User.refreshTokens[]`, so revoking a session and pulling the hash keep auth + the session list in lock-step. Indexes: `{userId, lastSeenAt:-1}`, unique `refreshTokenHash`. |
-| `SecurityEvent.model.ts` | Append-only auth/security trail (`timestamps:{createdAt:true,updatedAt:false}`). Types: `login_success/failed`, `logout`, `password_changed/reset`, `session_revoked`, `token_reuse`, `suspicious_activity`. |
-| `AuditLog.model.ts` | Append-only privileged-action log (admin/superadmin mutations), with actor, action, target, ip, user-agent. |
-
-### 2.2 Services (server)
-- **`security.service.ts`** — `record()` (best-effort; on `login_failed` + email runs suspicious detection), `detectSuspicious()` (≥5 failed logins for an email in 15 min → `suspicious_activity`), `loginHistory()` (user, paginated), `listEvents()` (admin, filter by type/userId).
-- **`session.service.ts`** — `record()` (create on login, **rotate in place** on refresh via `replaceHash`), `listForUser()` (**never returns the token hash**; flags the current device), `revoke()` (pull hash from `User.refreshTokens` + delete the session + record `session_revoked`), `revokeAll()` (keep current device optional), `revokeByHash()` (logout), `clearForUser()` (password change/reset/reuse).
-- **`audit.service.ts`** — `record()` (best-effort) + `list()` (paginated, batched actor name/email lookup).
-
-All logging is wrapped in try/catch and never throws — it cannot break the auth flow.
-
-### 2.3 Auth flow integration (`auth.service.ts`)
-- `issueTokens()` generates a `jti`, hashes the refresh token, persists it (capped to `MAX_ACTIVE_SESSIONS = 5`), and records/rotates the device session.
-- `login()` records `login_failed` (unknown email, bad password, or deactivated account) and `login_success`.
-- `refresh()` rotates the session in place; on refresh-token **reuse** it wipes all sessions and records `token_reuse`.
-- `logout()` revokes the session by hash + records `logout`.
-- `resetPassword()` clears sessions + records `password_reset`.
-- `user.service.ts` `changePassword()` clears sessions + records `password_changed`; `signOutEverywhere()` now also clears `Session` docs.
-
-### 2.4 HTTP surface
-**User (under `/api/v1/auth`, so the path-scoped `nl_refresh_token` cookie identifies the current device):**
-- `GET /auth/sessions` — list device sessions (current flagged)
-- `DELETE /auth/sessions/:id` — revoke one
-- `POST /auth/sessions/revoke-all` — revoke all others
-- `GET /auth/login-history` — paginated personal history
-
-**Admin (`requireRole('admin','superadmin')`):**
-- `GET /admin/security/audit-logs`
-- `GET /admin/security/events`
-
-### 2.5 Audit wiring
-`AuditService.record` is called (with IP/user-agent from `getRequestContext`) on: user role change, activate/deactivate, soft-delete, course delete, payment refund — using dotted action keys (`user.role_changed`, `user.deactivated`, `course.deleted`, `payment.refunded`, …).
-
-### 2.6 Frontend
-- **`hooks/useSecurity.ts`** — `useDeviceSessions`, `useRevokeSession`, `useRevokeOtherSessions`, `useLoginHistory`, `useAuditLogs`, `useSecurityEvents` (React Query, typed; no `any`).
-- **`lib/security-format.ts`** — event labels, suspicious-event emphasis, dependency-free user-agent → device label, dotted-action formatter.
-- **Profile → Security tab** — rebuilt from a session *count* to a real device list (device, IP, last-active, "this device" badge, per-session revoke + "sign out other devices" + "sign out everywhere") and a paginated login/security history (`DeviceSessionsCard`, `LoginHistoryCard`).
-- **Admin → Security page** (`/admin/security`) — tabbed Security events (with type filter) + Audit log, paginated; new sidebar entry (`Shield` icon). The admin layout is already `force-dynamic`.
+Pre-existing `as unknown` (DOMPurify/JSDOM interop in `sanitizeRichText.ts`,
+two casts in `analytics.service.ts`) and `console.log` in seed scripts predate
+Phase 8 and are out of scope; no Phase 8 file introduces a forbidden pattern.
 
 ---
 
-## 3. Verification Gate (this increment)
+## 2. Implemented Systems
 
-| Check | Result |
-|---|---|
-| Server `tsc --noEmit` | 0 errors |
-| Client `tsc --noEmit` | 0 errors |
-| Server `npm run build` | clean |
-| Client `next build` | clean — `/admin/security` route emitted (ƒ dynamic) |
-| `madge --circular` server | none |
-| `madge --circular` client | none |
-| Forbidden patterns in changed files | none |
-
----
-
-## 4. Security properties (intentional)
-- Token hashes are **never** returned to clients (`listForUser` projects them out).
-- Session list and `User.refreshTokens` move together; revoking a session invalidates the refresh token.
-- All security/audit writes are best-effort and isolated from the auth path.
-- Session-management endpoints live under `/auth` specifically so the path-scoped refresh cookie can mark the requesting device as current.
-
-## 5. Known minor inconsistency (carried, harmless)
-The `refreshTokens.slice(-MAX_ACTIVE_SESSIONS)` cap can orphan a `Session` doc once a user exceeds 5 concurrent devices. The orphaned session is dead (its hash is no longer in `User.refreshTokens`, so it can't refresh) and revoke still works. Documented, not blocking.
+| § | System | Summary |
+| --- | --- | --- |
+| 8.1 | Codebase audit | Verified green baseline (tsc/build/madge) before building. |
+| 8.7 | Enterprise Security | Device sessions, security-event trail, audit log, suspicious-activity detection, session-management UI, admin security console. *(committed with the baseline)* |
+| 8.2 | AI Learning Assistant | Provider abstraction (OpenAI/Anthropic/local fallback), grounded tutor chat, summaries, quiz explanations, assignment feedback, recommendations. |
+| 8.3 | Advanced Analytics | Funnel, cohorts, retention, OLS revenue forecast, course/instructor performance — aggregation pipelines, Redis-cached. |
+| 8.4 | Marketplace Layer | Public stats, featured/trending/top-rated rails, category breakdown, instructor directory + public profiles, SEO/sitemap. |
+| 8.5 | Affiliate System | Accounts, referral codes, click tracking, conversion attribution (free + paid), commissions, payouts, admin settlement. |
+| 8.6 | Advanced White-Label | Theme presets, custom domains with real DNS verification, feature flags, customizable email templates. |
+| 8.8 | Operational Dashboard | Infra + integration health, scheduled-job monitoring via a job registry. |
+| 8.9 | Documentation Generator | Source-parsing API doc generator + architecture/deployment/onboarding docs. |
+| 8.10 | Performance | Response compression, compound indexes, public cache headers, client bundle optimization. |
+| 8.11 | Testing Expansion | Vitest + Supertest; unit/integration/API/auth/tenant-isolation/payment/affiliate tests + CI. |
+| 8.13 | This report | — |
 
 ---
 
-## 6. NOT in this increment (placeholders avoided)
-No stubs were shipped. The following Phase 8 areas were **not started** rather than half-built:
-AI Learning Assistant (§8.2), Advanced Analytics (§8.3), Marketplace (§8.4), Affiliate System (§8.5), Advanced White-Label (§8.6), Operational Dashboard (§8.8), Documentation Generator (§8.9), Performance Optimization (§8.10), Testing Expansion (§8.11).
+## 3. Created Files (Phase 8.2–8.11)
 
-## 7. Honest roadmap for the remaining Phase 8 areas
-Each is its own verified increment, in suggested dependency order:
+**Server — models (10):** `AIConversation`, `Affiliate`, `AffiliateReferral`,
+`AffiliateCommission`, `AffiliatePayout`, `EmailTemplate` (Phase 8.7 also added
+`Session`, `SecurityEvent`, `AuditLog`).
 
-1. **Testing Expansion (§8.11)** — add a test runner + unit/integration/API/auth/tenant-isolation/payment suites and a CI script. Highest leverage: it protects every subsequent increment (including this one).
-2. **Operational Dashboard (§8.8)** — health, queue/Redis/email/Stripe-webhook/job monitoring. Builds on existing `config/redis.ts`, `jobs/`, and the `/health` endpoint.
-3. **Advanced Analytics (§8.3)** — retention, funnels, cohorts, forecasting via `$aggregate` pipelines, extending the existing admin/instructor analytics services.
-4. **Advanced White-Label (§8.6)** — custom domains + DNS verification, theme presets, brand/email templates, feature flags, on top of the current branding system.
-5. **Marketplace (§8.4)** — instructor/course marketplace, profiles, reviews, rankings, featured/trending, SEO.
-6. **Affiliate System (§8.5)** — accounts, referral links, attribution, commission tracking, payouts (depends on Stripe Connect, already present).
-7. **AI Learning Assistant (§8.2)** — provider abstraction (OpenAI/Anthropic-ready) + tutor chat, summarization, quiz explanation, assignment feedback, recommendations. **Requires an external API credential** (one of the spec's legitimate stop conditions).
-8. **Performance Optimization (§8.10)** + **Documentation Generator (§8.9)** — cross-cutting; best done last over a stable surface.
+**Server — services:** `ai.service`, `ai/ai.provider`, `ai/ai.types`,
+`ai/extractive`, `ai/providers/{openai,anthropic,local}.provider`,
+`admin.advancedAnalytics.service`, `marketplace.service`, `affiliate.service`,
+`whiteLabel.service`, `ops.service`.
 
-Recommended next step: **§8.11 Testing Expansion**, so each later increment lands against a real safety net.
+**Server — controllers:** `ai.controller`, `marketplace.controller`,
+`affiliate.controller`, `whiteLabel.controller`.
+
+**Server — routes:** `ai.routes`, `marketplace.routes`, `affiliate.routes`.
+
+**Server — validations:** `ai.validation`, `affiliate.validation`,
+`whiteLabel.validation`.
+
+**Server — infra/scripts/tests:** `jobs/jobRegistry`, `scripts/generateDocs`,
+`vitest.config.ts`, `__tests__/{setup,helpers}`, 4 unit + 4 integration test files.
+
+**Client — pages:** `/assistant`, `/marketplace`, `/instructors`,
+`/instructors/[id]`, `/affiliate`, `(admin)/admin/analytics/advanced`,
+`(admin)/admin/affiliates`, `(admin)/admin/white-label`, `(superadmin)/superadmin/ops`.
+
+**Client — hooks:** `useAI`, `useAdminAdvancedAnalytics`, `useMarketplace`,
+`useAffiliate`, `useWhiteLabel`, `useOps`.
+
+**Client — components/lib:** `ForecastChart`, `MarketplaceCourseCard`,
+`ReferralCapture`, `lib/referral`, `lib/security-format` (8.7).
+
+**Docs/CI:** `docs/{API,ARCHITECTURE,DEPLOYMENT,ONBOARDING}.md`,
+`.github/workflows/ci.yml`.
+
+## 4. Modified Files (notable)
+
+`config/env` (AI vars), `app.ts` (compression), `middleware/rateLimiter`
+(aiLimiter), `jobs/index` (tracked runs), `services/{auth,email,enrollment,payment}`
+(template overrides + affiliate attribution + referral threading),
+`controllers/{admin,enrollment,payment,superadmin,tenant,webhook}`,
+`routes/v1/{index,admin,superadmin}`, `models/{Course,Enrollment,Payment,WhiteLabel}`
+(indexes + white-label fields), client `layouts`, `Navbar`, `Footer`, `sitemap`,
+`next.config.mjs`, `useEnrollment`, `useSubscription`, `tsconfig`, `package.json`.
+
+---
+
+## 5. Architecture Decisions
+
+- **AI provider abstraction with graceful fallback.** `AIProvider` interface +
+  factory. OpenAI/Anthropic call REST directly (no SDK dependency, fewer supply-chain
+  surfaces). When no hosted key is configured, a dependency-free **local provider**
+  (extractive summarization + keyword-overlap QA) keeps every AI feature functional
+  offline — satisfying the "missing external credential" requirement without stubs.
+- **Attribution at the enrollment boundary.** Affiliate conversions are recorded
+  inside `createEnrollment`/`enroll` (free) and via Stripe checkout metadata →
+  webhook (paid), so a single code path covers both. Best-effort + idempotent
+  (unique `paymentId` index) so it can never break checkout.
+- **Real DNS verification, no DNS-provider lock-in.** Custom-domain verification
+  uses Node's `dns.resolveTxt` against `_nextlearn.<domain>`; on success the domain
+  is wired into the existing tenant resolver. No third-party DNS API required.
+- **Source-parsing doc generator.** Decoupled from Express internals (parses route
+  files + the mount table) → deterministic and resilient across versions.
+- **Tests against a real MongoDB.** Integration tests use a real test DB (local in
+  dev, a `mongo` CI service) rather than mocks, exercising true tenant isolation and
+  access control. Excluded from the production `tsc` build to keep `dist` clean.
+- **Feature flags in `/tenant/config`.** Per-tenant flags are surfaced to the client
+  for UI gating and stored on the white-label record.
+
+## 6. Security Improvements (8.7)
+
+- Device-session model mirroring refresh-token hashes; per-device + bulk revoke.
+- Refresh-token reuse detection wipes the token family and records `token_reuse`.
+- Append-only security-event trail + privileged-action audit log (best-effort).
+- Suspicious-activity detection (≥5 failed logins/email/15 min).
+- Token hashes are never returned to clients; session endpoints live under `/auth`
+  so the path-scoped refresh cookie can identify the current device.
+- AI generation endpoints are rate-limited; admin affiliate mutations are audited.
+
+## 7. Performance Improvements (8.10)
+
+- gzip/deflate response compression (`compression`).
+- Compound indexes for hot Phase 8 queries: Course (published+approved+category,
+  +rating, per-instructor), Enrollment (tenant/time, tenant/course/time), Payment
+  (tenant/status/time, course/status).
+- `Cache-Control` + `stale-while-revalidate` on public marketplace reads; Redis
+  caching on marketplace stats/trending and all advanced-analytics aggregations.
+- Client: `optimizePackageImports` (lucide-react/recharts/date-fns), AVIF/WebP
+  images, `poweredByHeader: false`.
+
+## 8. Analytics Additions (8.3)
+
+Conversion funnel (enrolled→started→completed→certified), monthly signup cohorts
+with activation rate, engagement retention, OLS linear-regression revenue forecast
+(12-month history + 3-month projection with trend), per-course performance
+(completion/avg-progress/revenue/rating) and per-instructor performance. New admin
+`/admin/analytics/advanced` page with a forecast chart.
+
+## 9. Marketplace Additions (8.4)
+
+Public tenant-scoped endpoints (stats, featured, trending by 30-day enrollment
+velocity, top-rated, categories, instructor directory with search, instructor
+profiles). Drafts/unapproved courses are never exposed. `/marketplace`,
+`/instructors`, `/instructors/[id]` pages; marketplace + instructor routes added to
+the sitemap.
+
+## 10. Affiliate Additions (8.5)
+
+Affiliate accounts with unique referral codes, click tracking + attribution window,
+percentage commissions with idempotent per-payment recording, balances, affiliate
+payout requests (min threshold + payout email), and admin settlement
+(mark-paid moves pending→paid). Self-referral and duplicate attribution prevented.
+`/affiliate` dashboard + `/admin/affiliates` console.
+
+## 11. AI Additions (8.2)
+
+Tutor chat grounded in course/lesson content with persisted `AIConversation`
+threads, lesson summarization, quiz-answer explanation, rubric-aware assignment
+feedback, and content-based recommendations. `/assistant` page (chat + history +
+recommendations). Configurable via `AI_PROVIDER` + keys, with local fallback.
+
+## 12. Remaining Technical Debt
+
+- **Test coverage breadth.** Solid core suites exist (auth, tenant isolation,
+  payments, affiliate, key units). Not yet covered: marketplace ranking,
+  advanced-analytics math against seeded data, white-label DNS path (needs a DNS
+  stub), AI hosted-provider paths (need keys/network mocks), and client component
+  tests. No coverage thresholds enforced.
+- **AI hosted providers are untested live.** OpenAI/Anthropic providers are wired
+  and type-safe but exercised only via the local fallback without credentials.
+- **Email template overrides** are applied to the welcome + verification sends; the
+  password-reset and enrollment templates are managed/previewable but not yet wired
+  into their send paths.
+- **Affiliate payouts are manual.** Admin marks payouts paid (records reference);
+  no automated PayPal/Stripe payout API integration yet.
+- **Forecast model is linear (OLS).** Adequate for trend indication; not seasonal.
+- **Job-run history is in-memory.** The ops dashboard's job stats reset on restart
+  (acceptable for at-a-glance monitoring; persist to a collection for history).
+- **Custom-domain TLS/routing** is verified at the DNS layer; issuing certificates
+  and host routing remain an infrastructure/runtime concern (documented in
+  DEPLOYMENT.md).
+- **Pre-existing items** carried from earlier phases: Next.js 14 `npm audit`
+  advisories (framework-level), and the OneDrive `.next` build flake (retry passes).
+
+---
+
+## 13. How to verify locally
+
+```bash
+# Server
+cd server
+npm run typecheck && npm run build && npm test   # needs local MongoDB on :27017
+npm run docs:api                                 # regenerates docs/API.md
+
+# Client
+cd client
+npm run type-check && npm run build
+```
+
+CI (`.github/workflows/ci.yml`) runs the same gates on push/PR, with a `mongo:7`
+service for the integration tests.
