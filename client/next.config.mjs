@@ -10,9 +10,16 @@ import path from 'node:path';
  */
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+  // Tree-shake large icon/UI barrels so only used exports ship in each bundle.
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'date-fns'],
+  },
   // @react-pdf/renderer is ESM-only; let Next transpile it for correct interop.
   transpilePackages: ['@react-pdf/renderer'],
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },

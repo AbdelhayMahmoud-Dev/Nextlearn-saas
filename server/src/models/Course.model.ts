@@ -93,5 +93,10 @@ const courseSchema = new Schema<ICourse>(
 // Slug unique within a tenant; full-text search over discoverable fields.
 courseSchema.index({ tenantId: 1, slug: 1 }, { unique: true });
 courseSchema.index({ title: 'text', description: 'text', tags: 'text' });
+// Marketplace/catalog: published+approved listings filtered by category, ranked.
+courseSchema.index({ tenantId: 1, isPublished: 1, isApproved: 1, category: 1 });
+courseSchema.index({ tenantId: 1, isPublished: 1, isApproved: 1, 'rating.average': -1 });
+// Instructor profiles + per-instructor performance.
+courseSchema.index({ tenantId: 1, instructorId: 1, isPublished: 1 });
 
 export const Course = model<ICourse>('Course', courseSchema);

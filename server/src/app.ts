@@ -1,5 +1,6 @@
 import { createServer, type Server as HttpServer } from 'http';
 import express, { Express } from 'express';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { initSocket } from './config/socket';
 import { applyEarlySecurity, applyInputSanitizers } from './middleware/security';
@@ -26,6 +27,8 @@ export function createApp(): Express {
   app.disable('x-powered-by');
 
   app.use(requestLogger);
+  // gzip/deflate JSON + text responses (skips already-compressed assets).
+  app.use(compression());
   applyEarlySecurity(app); // helmet + CORS (no body needed)
 
   // Stripe webhook MUST receive the raw body for signature verification, so it

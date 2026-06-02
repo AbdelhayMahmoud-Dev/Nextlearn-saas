@@ -47,5 +47,8 @@ const enrollmentSchema = new Schema<IEnrollment>(
 
 // A user can only be enrolled in a given course once.
 enrollmentSchema.index({ userId: 1, courseId: 1 }, { unique: true });
+// Analytics (cohorts/retention/funnel) + trending group by tenant/time/course.
+enrollmentSchema.index({ tenantId: 1, createdAt: 1 });
+enrollmentSchema.index({ tenantId: 1, courseId: 1, createdAt: -1 });
 
 export const Enrollment = model<IEnrollment>('Enrollment', enrollmentSchema);
