@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
+import { EmailTemplate, EmailTemplateKey } from '../models/EmailTemplate.model';
+import { renderTemplateString } from './whiteLabel.service';
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
@@ -50,11 +52,57 @@ function button(href: string, label: string): string {
 }
 
 /**
+ * Returns a tenant's enabled custom override for a template key, rendered with
+ * `vars`, or null to fall back to the platform default. Best-effort: a lookup
+ * failure must never block a transactional email.
+ */
+async function customOverride(
+  tenantId: string | undefined,
+  key: EmailTemplateKey,
+  vars: Record<string, string>,
+  actionUrl?: string,
+  actionLabel?: string,
+): Promise<{ subject: string; html: string } | null> {
+  if (!tenantId) return null;
+  try {
+    const t = await EmailTemplate.findOne({ tenantId, key, enabled: true }).lean();
+    if (!t) return null;
+    const bodyHtml = `<p>${renderTemplateString(t.body, vars)}</p>${
+      actionUrl && actionLabel ? `<p style="margin:24px 0">${button(actionUrl, actionLabel)}</p>` : ''
+    }`;
+    return {
+      subject: renderTemplateString(t.subject, vars),
+      html: layout(renderTemplateString(t.heading, vars), bodyHtml),
+    };
+  } catch (err) {
+    logger.warn({ err, key }, 'Custom email template lookup failed; using default');
+    return null;
+  }
+}
+
+/**
  * Transactional email API. (HTML templates here are intentionally minimal;
  * they are slated to be replaced by React Email components in a later phase.)
  */
 export const EmailService = {
-  async sendVerificationEmail(to: string, name: string, verifyUrl: string): Promise<void> {
+  async sendVerificationEmail(
+    to: string,
+    name: string,
+    verifyUrl: string,
+    tenantId?: string,
+    platformName = 'NextLearn',
+  ): Promise<void> {
+    const override = await customOverride(
+      tenantId,
+      'verification',
+      { name, platformName, actionUrl: verifyUrl },
+      verifyUrl,
+      'Verify email',
+    );
+    if (override) {
+      await send({ to, subject: override.subject, html: override.html });
+      return;
+    }
     await send({
       to,
       subject: 'Verify your NextLearn account',
@@ -116,7 +164,23 @@ export const EmailService = {
     });
   },
 
-  async sendWelcomeEmail(to: string, name: string): Promise<void> {
+  async sendWelcomeEmail(
+    to: string,
+    name: string,
+    tenantId?: string,
+    platformName = 'NextLearn',
+  ): Promise<void> {
+    const override = await customOverride(
+      tenantId,
+      'welcome',
+      { name, platformName },
+      env.CLIENT_URL,
+      `Go to ${platformName}`,
+    );
+    if (override) {
+      await send({ to, subject: override.subject, html: override.html });
+      return;
+    }
     await send({
       to,
       subject: 'Welcome to NextLearn 🎉',

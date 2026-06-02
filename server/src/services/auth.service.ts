@@ -109,7 +109,7 @@ export const AuthService = {
     });
 
     const verifyUrl = `${env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-    await EmailService.sendVerificationEmail(user.email, user.name, verifyUrl);
+    await EmailService.sendVerificationEmail(user.email, user.name, verifyUrl, tenantId);
 
     return { user: toPublicUser(user) };
   },
@@ -230,7 +230,7 @@ export const AuthService = {
     user.verificationTokenExpires = undefined;
     await user.save();
 
-    await EmailService.sendWelcomeEmail(user.email, user.name);
+    await EmailService.sendWelcomeEmail(user.email, user.name, user.tenantId.toString());
   },
 
   /** Starts a password reset. Always resolves the same way to avoid enumeration. */

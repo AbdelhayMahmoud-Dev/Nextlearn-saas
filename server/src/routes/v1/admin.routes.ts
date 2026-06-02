@@ -3,6 +3,7 @@ import { authenticate } from '../../middleware/authenticate';
 import { requireRole } from '../../middleware/requireRole';
 import { validate } from '../../middleware/validate';
 import { AdminController } from '../../controllers/admin.controller';
+import { WhiteLabelController } from '../../controllers/whiteLabel.controller';
 import {
   changeRoleSchema,
   toggleStatusSchema,
@@ -16,6 +17,13 @@ import {
   setStatusSchema,
   markPaidSchema,
 } from '../../validations/affiliate.validation';
+import {
+  applyPresetSchema,
+  customDomainSchema,
+  featureFlagsSchema,
+  upsertEmailTemplateSchema,
+  previewEmailTemplateSchema,
+} from '../../validations/whiteLabel.validation';
 
 const router = Router();
 
@@ -79,6 +87,28 @@ router.post('/affiliates/payouts/:id/paid', validate(markPaidSchema), AdminContr
 // ── Security + Audit ─────────────────────────────────────────────────────────
 router.get('/security/audit-logs', AdminController.auditLogs);
 router.get('/security/events', AdminController.securityEvents);
+
+// ── Advanced White-Label ─────────────────────────────────────────────────────
+router.get('/white-label/presets', WhiteLabelController.presets);
+router.post('/white-label/presets/apply', validate(applyPresetSchema), WhiteLabelController.applyPreset);
+router.get('/white-label/domain', WhiteLabelController.getDomain);
+router.put('/white-label/domain', validate(customDomainSchema), WhiteLabelController.setDomain);
+router.post('/white-label/domain/verify', WhiteLabelController.verifyDomain);
+router.delete('/white-label/domain', WhiteLabelController.removeDomain);
+router.get('/white-label/feature-flags', WhiteLabelController.getFlags);
+router.patch('/white-label/feature-flags', validate(featureFlagsSchema), WhiteLabelController.setFlags);
+router.get('/white-label/email-templates', WhiteLabelController.listTemplates);
+router.put(
+  '/white-label/email-templates/:key',
+  validate(upsertEmailTemplateSchema),
+  WhiteLabelController.upsertTemplate,
+);
+router.delete('/white-label/email-templates/:key', WhiteLabelController.resetTemplate);
+router.post(
+  '/white-label/email-templates/preview',
+  validate(previewEmailTemplateSchema),
+  WhiteLabelController.previewTemplate,
+);
 
 // ── Stripe Connect (payouts) ─────────────────────────────────────────────────
 router.post('/stripe/connect', AdminController.stripeConnect);
