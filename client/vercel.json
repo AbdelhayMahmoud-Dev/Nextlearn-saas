@@ -3,15 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "installCommand": "npm install",
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@next-public-api-url",
-    "NEXT_PUBLIC_APP_URL": "@next-public-app-url",
-    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@next-public-stripe-pk",
-    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "@next-public-cloudinary-name",
-    "NEXT_PUBLIC_SOCKET_URL": "@next-public-socket-url",
-    "NEXT_PUBLIC_TENANT_ID": "@next-public-tenant-id",
-    "AUTH_SECRET": "@auth-secret"
-  },
   "headers": [
     {
       "source": "/(.*)",
