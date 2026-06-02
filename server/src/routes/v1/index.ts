@@ -22,6 +22,7 @@ import adminRoutes from './admin.routes';
 import tenantRoutes from './tenant.routes';
 import superadminRoutes from './superadmin.routes';
 import aiRoutes from './ai.routes';
+import marketplaceRoutes from './marketplace.routes';
 
 const router = Router();
 
@@ -65,5 +66,7 @@ router.use('/tenant', tenantRoutes);
 router.use('/superadmin', superadminRoutes);
 // AI Learning Assistant (tutor chat, summaries, quiz explanations, feedback)
 router.use('/ai', aiRoutes);
+// Public marketplace (featured/trending/top-rated courses, instructor directory)
+router.use('/marketplace', marketplaceRoutes);
 
 export default router;

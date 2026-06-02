@@ -2,6 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
+import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 import { AnalyticsFilters } from '@/components/admin/AnalyticsFilters';
 import { RevenueBreakdown } from '@/components/admin/RevenueBreakdown';
 import { EnrollmentHeatmap } from '@/components/admin/EnrollmentHeatmap';
@@ -40,7 +42,15 @@ export default function AdminAnalyticsPage(): JSX.Element {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-heading text-2xl font-bold">Analytics</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="font-heading text-2xl font-bold">Analytics</h1>
+        <Link
+          href="/admin/analytics/advanced"
+          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium hover:border-brand-primary"
+        >
+          <Sparkles className="size-4" /> Advanced insights
+        </Link>
+      </div>
       <AnalyticsFilters categories={cats.map((c) => c.category)} category={category} onCategory={setCategory} onExport={onExport} />
 
       <section className="rounded-xl border bg-card p-5">

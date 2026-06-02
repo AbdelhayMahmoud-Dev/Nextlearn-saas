@@ -43,6 +43,9 @@ export function Navbar(): JSX.Element {
 
         <nav className="hidden items-center gap-6 md:flex">
           <NavCategoryDropdown />
+          <Link href="/marketplace" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+            Marketplace
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
