@@ -46,7 +46,7 @@ export const EnrollmentService = {
     if (existing) return existing.toObject();
 
     if (course.price > 0) {
-      throw new ApiError(402, 'This course requires payment. Checkout is coming soon.');
+      throw new ApiError(402, 'This course requires payment — start checkout to enroll.');
     }
 
     const enrollment = await Enrollment.create({
