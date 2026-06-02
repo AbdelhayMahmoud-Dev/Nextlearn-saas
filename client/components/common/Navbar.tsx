@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -49,6 +49,11 @@ export function Navbar(): JSX.Element {
           <ThemeToggle />
           {isAuthed ? (
             <>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link href="/assistant" aria-label="Learning assistant">
+                  <Sparkles className="size-4" /> Assistant
+                </Link>
+              </Button>
               <NotificationBell />
               <Button asChild variant="brand" size="sm">
                 <Link href="/dashboard">Dashboard</Link>

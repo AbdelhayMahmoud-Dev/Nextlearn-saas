@@ -21,6 +21,15 @@ export const globalLimiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 
+/** AI assistant limiter: 30 generations / 15 min / IP (hosted calls cost money). */
+export const aiLimiter = rateLimit({
+  windowMs: FIFTEEN_MINUTES,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'AI request limit reached. Please try again shortly.' },
+});
+
 /**
  * Strict limiter for auth endpoints: 5 attempts / 15 min / IP.
  * Successful requests are not counted, so legitimate logins aren't penalized.

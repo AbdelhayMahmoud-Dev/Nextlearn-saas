@@ -44,6 +44,17 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
+
+  // AI Learning Assistant. Provider is pluggable; when the selected hosted
+  // provider has no API key, the service transparently falls back to the
+  // dependency-free local provider so the feature always works.
+  AI_PROVIDER: z.enum(['openai', 'anthropic', 'local']).default('local'),
+  OPENAI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  ANTHROPIC_MODEL: z.string().default('claude-3-5-haiku-latest'),
+  AI_MAX_OUTPUT_TOKENS: z.coerce.number().int().positive().default(1024),
+  AI_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.4),
 });
 
 const parsed = envSchema.safeParse(process.env);

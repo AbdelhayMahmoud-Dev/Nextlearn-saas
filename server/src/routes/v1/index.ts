@@ -21,6 +21,7 @@ import couponRoutes from './coupon.routes';
 import adminRoutes from './admin.routes';
 import tenantRoutes from './tenant.routes';
 import superadminRoutes from './superadmin.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -62,5 +63,7 @@ router.use('/admin', adminRoutes);
 router.use('/tenant', tenantRoutes);
 // Cross-tenant SuperAdmin endpoints (/superadmin/*)
 router.use('/superadmin', superadminRoutes);
+// AI Learning Assistant (tutor chat, summaries, quiz explanations, feedback)
+router.use('/ai', aiRoutes);
 
 export default router;
