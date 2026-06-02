@@ -13,6 +13,7 @@ import { CourseService } from '../services/course.service';
 import { CouponService } from '../services/coupon.service';
 import { AuditService } from '../services/audit.service';
 import { SecurityService } from '../services/security.service';
+import { AdminAdvancedAnalyticsService } from '../services/admin.advancedAnalytics.service';
 
 export const AdminController = {
   // ── Analytics ───────────────────────────────────────────────────────────
@@ -217,6 +218,32 @@ export const AdminController = {
     const user = getAuthUser(req);
     const result = await StripeConnectService.syncAccountStatus(user.tenantId);
     ApiResponse.success(res, result, 'Stripe status');
+  }),
+
+  // ── Advanced Analytics ────────────────────────────────────────────────────
+  analyticsFunnel: asyncHandler(async (req, res) => {
+    const data = await AdminAdvancedAnalyticsService.funnel(getTenantId(req));
+    ApiResponse.success(res, data, 'Conversion funnel');
+  }),
+  analyticsCohorts: asyncHandler(async (req, res) => {
+    const data = await AdminAdvancedAnalyticsService.cohorts(getTenantId(req));
+    ApiResponse.success(res, data, 'Signup cohorts');
+  }),
+  analyticsRetention: asyncHandler(async (req, res) => {
+    const data = await AdminAdvancedAnalyticsService.retention(getTenantId(req));
+    ApiResponse.success(res, data, 'Retention');
+  }),
+  analyticsForecast: asyncHandler(async (req, res) => {
+    const data = await AdminAdvancedAnalyticsService.revenueForecast(getTenantId(req));
+    ApiResponse.success(res, data, 'Revenue forecast');
+  }),
+  analyticsCoursePerformance: asyncHandler(async (req, res) => {
+    const data = await AdminAdvancedAnalyticsService.coursePerformance(getTenantId(req));
+    ApiResponse.success(res, data, 'Course performance');
+  }),
+  analyticsInstructorPerformance: asyncHandler(async (req, res) => {
+    const data = await AdminAdvancedAnalyticsService.instructorPerformance(getTenantId(req));
+    ApiResponse.success(res, data, 'Instructor performance');
   }),
 
   // ── Security + Audit ──────────────────────────────────────────────────────

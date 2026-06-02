@@ -24,6 +24,14 @@ router.get('/analytics/user-growth', AdminController.userGrowth);
 router.get('/analytics/top-courses', AdminController.topCourses);
 router.get('/analytics/categories', AdminController.categories);
 
+// ── Advanced Analytics (retention, funnels, cohorts, forecasting) ────────────
+router.get('/analytics/funnel', AdminController.analyticsFunnel);
+router.get('/analytics/cohorts', AdminController.analyticsCohorts);
+router.get('/analytics/retention', AdminController.analyticsRetention);
+router.get('/analytics/forecast', AdminController.analyticsForecast);
+router.get('/analytics/course-performance', AdminController.analyticsCoursePerformance);
+router.get('/analytics/instructor-performance', AdminController.analyticsInstructorPerformance);
+
 // ── Users ────────────────────────────────────────────────────────────────
 router.get('/users', AdminController.listUsers);
 router.post('/users/export', AdminController.exportUsers);
