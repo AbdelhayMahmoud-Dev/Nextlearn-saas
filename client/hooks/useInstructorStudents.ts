@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useTenantStore } from '@/store/tenantStore';
-import type { ApiResponse, IEnrollment, PaginationMeta } from '@/types';
+import type { PaginatedResponse, PaginationMeta } from '@/types';
 
 interface StudentsQuery {
   courseId?: string;
@@ -12,8 +12,17 @@ interface StudentsQuery {
   limit?: number;
 }
 
+/** An enrollment row with `userId`/`courseId` populated by the API. */
+export interface StudentEnrollment {
+  _id: string;
+  userId: { name?: string; email?: string; avatar?: string } | null;
+  courseId: { title?: string; slug?: string; thumbnail?: string } | null;
+  progress?: { percentage?: number };
+  enrolledAt: string;
+}
+
 interface StudentsResult {
-  items: IEnrollment[];
+  items: StudentEnrollment[];
   meta: PaginationMeta;
 }
 
@@ -30,17 +39,11 @@ export function useInstructorStudents(query: StudentsQuery = {}) {
       if (query.courseId) params.courseId = query.courseId;
       if (query.q) params.q = query.q;
 
-      const { data } = await apiClient.get<ApiResponse<IEnrollment[]>>(
+      const { data } = await apiClient.get<PaginatedResponse<StudentEnrollment>>(
         '/analytics/instructor/students',
         { params },
       );
-      return {
-        items: data.data,
-        meta: (data.meta as unknown as PaginationMeta | undefined) ?? {
-          page: 1, limit: 20, total: data.data.length,
-          totalPages: 1, hasNext: false, hasPrev: false,
-        },
-      };
+      return { items: data.data, meta: data.meta };
     },
     staleTime: 60_000,
   });

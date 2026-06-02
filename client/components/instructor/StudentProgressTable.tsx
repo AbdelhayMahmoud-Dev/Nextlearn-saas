@@ -3,10 +3,10 @@
 import Image from 'next/image';
 import { getInitials, formatDate } from '@/lib/utils';
 import { Pagination } from '@/components/common/Pagination';
-import type { IEnrollment } from '@/types';
+import type { StudentEnrollment } from '@/hooks/useInstructorStudents';
 
 interface Props {
-  enrollments: IEnrollment[];
+  enrollments: StudentEnrollment[];
   page: number;
   totalPages: number;
 }
@@ -33,8 +33,8 @@ export function StudentProgressTable({ enrollments, page, totalPages }: Props): 
           </thead>
           <tbody className="divide-y">
             {enrollments.map((enrollment) => {
-              const user = enrollment.userId as unknown as { name?: string; avatar?: string };
-              const course = enrollment.courseId as unknown as { title?: string };
+              const user = enrollment.userId;
+              const course = enrollment.courseId;
               const pct = enrollment.progress?.percentage ?? 0;
 
               return (
