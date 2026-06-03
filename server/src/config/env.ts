@@ -14,7 +14,7 @@ const durationString = z
  */
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(5000),
+  PORT: z.coerce.number().int().positive().default(8080),
 
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
 

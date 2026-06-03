@@ -31,6 +31,14 @@ export function createApp(): Express {
   app.use(compression());
   applyEarlySecurity(app); // helmet + CORS (no body needed)
 
+  // Platform health probe (Railway/Render/Docker/Kubernetes). Deliberately the
+  // simplest possible handler: no auth, no tenant resolution, no body parsing,
+  // and registered BEFORE rate limiting so it is never throttled. Mirrors the
+  // richer /api/v1/health endpoint.
+  app.get(['/health', '/healthz'], (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
   // Stripe webhook MUST receive the raw body for signature verification, so it
   // is mounted BEFORE the global JSON body parser (and before input sanitizers).
   app.post(

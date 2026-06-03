@@ -47,6 +47,30 @@ export function getIO(): SocketServer {
 }
 
 /**
+ * Closes Socket.io during graceful shutdown: forcibly disconnects every client
+ * and closes the engine plus the underlying HTTP server. Resolves once the HTTP
+ * server has fully stopped accepting connections.
+ *
+ * This is critical for clean shutdown — without it, persistent WebSocket
+ * connections keep `http.Server.close()` from ever completing, the process is
+ * force-killed after the timeout, and the dying instance can still hold the
+ * port while a redeploy boots → `EADDRINUSE`.
+ */
+export function closeSocket(): Promise<void> {
+  return new Promise((resolve) => {
+    if (!io) {
+      resolve();
+      return;
+    }
+    io.disconnectSockets(true); // drop all clients immediately
+    io.close(() => {
+      io = null;
+      resolve();
+    });
+  });
+}
+
+/**
  * Emits an event to a specific user's room. Fire-and-forget: degrades silently
  * if Socket.io is not initialised (e.g. seed scripts).
  */
