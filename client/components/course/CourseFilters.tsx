@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search, X, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,9 @@ export function CourseFilters({ categories }: CourseFiltersProps): JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  // Filters are collapsed by default on mobile so the course grid isn't pushed
+  // below the fold; always expanded on lg+ via the `lg:block` class.
+  const [open, setOpen] = useState(false);
 
   const setParam = useCallback(
     (key: string, value?: string) => {
@@ -48,7 +51,8 @@ export function CourseFilters({ categories }: CourseFiltersProps): JSX.Element {
   };
 
   const get = (key: string): string => params.get(key) ?? '';
-  const hasFilters = ['q', 'category', 'level', 'price'].some((k) => params.get(k));
+  const activeCount = ['q', 'category', 'level', 'price'].filter((k) => params.get(k)).length;
+  const hasFilters = activeCount > 0;
 
   const toggle = (key: string, value: string): void =>
     setParam(key, get(key) === value ? undefined : value);
@@ -60,6 +64,30 @@ export function CourseFilters({ categories }: CourseFiltersProps): JSX.Element {
         <Input name="q" defaultValue={get('q')} placeholder="Search courses…" className="pl-9" aria-label="Search courses" />
       </form>
 
+      {/* Mobile-only disclosure toggle. Hidden on lg where filters are always shown. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="course-filter-panel"
+        className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm font-medium lg:hidden"
+      >
+        <span className="inline-flex items-center gap-2">
+          <SlidersHorizontal className="size-4" /> Filters
+          {activeCount > 0 && (
+            <span className="rounded-full bg-brand-primary px-1.5 text-xs text-brand-primary-foreground">
+              {activeCount}
+            </span>
+          )}
+        </span>
+        <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {/* Filter panel: collapsed on mobile unless toggled open; always open on lg+. */}
+      <div
+        id="course-filter-panel"
+        className={cn('space-y-6', open ? 'block' : 'hidden', 'lg:block')}
+      >
       <div className="space-y-2">
         <label htmlFor="sort" className="text-sm font-medium">
           Sort by
@@ -145,6 +173,7 @@ export function CourseFilters({ categories }: CourseFiltersProps): JSX.Element {
           <X className="size-4" /> Clear all filters
         </Button>
       )}
+      </div>
     </div>
   );
 }
