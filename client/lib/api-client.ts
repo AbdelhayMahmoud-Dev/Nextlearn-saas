@@ -81,8 +81,17 @@ apiClient.interceptors.response.use(
       await signOut({ redirect: false });
     }
 
+    // No HTTP response at all (status 0) means the request never reached the
+    // API: the server is down/unreachable, or the browser blocked the response
+    // because the origin isn't in the backend's CORS allow-list. Axios reports
+    // both as the opaque "Network Error" — replace it with an actionable hint.
+    const isNetworkError = !error.response && error.code !== 'ERR_CANCELED';
+    const message = isNetworkError
+      ? `Cannot reach the server (${baseURL}). Check your connection, that the API is running, and that this site is allowed by the API's CORS configuration.`
+      : (error.response?.data?.message ?? error.message ?? 'Request failed');
+
     const normalized: ApiErrorShape = {
-      message: error.response?.data?.message ?? error.message ?? 'Request failed',
+      message,
       statusCode: status,
       fieldErrors: error.response?.data?.error,
     };

@@ -70,6 +70,25 @@ if (!parsed.success) {
 const data = parsed.data;
 
 /**
+ * The set of origins the CORS layer accepts.
+ *
+ * Built from `ALLOWED_ORIGINS` (comma-separated) AND `CLIENT_URL`. Including
+ * `CLIENT_URL` automatically removes a very common production footgun: setting
+ * `CLIENT_URL` to the deployed frontend (e.g. the Vercel URL) but forgetting to
+ * also list it in `ALLOWED_ORIGINS`, which makes the backend reject its own
+ * frontend with a CORS error that surfaces in the browser as a bare
+ * "Network Error". A trailing slash is normalized away because the browser's
+ * `Origin` header never carries one.
+ */
+const allowedOrigins = Array.from(
+  new Set(
+    [...data.ALLOWED_ORIGINS.split(','), data.CLIENT_URL]
+      .map((origin) => origin.trim().replace(/\/$/, ''))
+      .filter(Boolean),
+  ),
+);
+
+/**
  * Strongly-typed, validated, frozen application configuration.
  * Import this everywhere instead of touching `process.env` directly.
  */
@@ -78,9 +97,7 @@ export const env = Object.freeze({
   isProd: data.NODE_ENV === 'production',
   isDev: data.NODE_ENV === 'development',
   isTest: data.NODE_ENV === 'test',
-  allowedOrigins: data.ALLOWED_ORIGINS.split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  allowedOrigins,
 });
 
 export type Env = typeof env;
